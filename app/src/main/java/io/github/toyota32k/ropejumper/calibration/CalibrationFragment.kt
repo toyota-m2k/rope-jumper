@@ -37,27 +37,27 @@ class CalibrationFragment : Fragment() {
     ): View {
         // Inflate the layout for this fragment
         controls = FragmentCalibrationBinding.inflate(layoutInflater)
-        adapter = FieldListAdapter(requireActivity(), listOf())
+        adapter = FieldListAdapter(requireActivity())
         // inflater.inflate(R.layout.fragment_calibration, container, false)
         return controls.root.also { view ->
             viewModel = MainViewModel.instanceFor(requireActivity()).also { model->
                 binder.register(
-                    model.calibrationModel.statisticsList.disposableObserve(this) {
+                    model.calibrationModel.statisticsList.disposableObserve(viewLifecycleOwner) {
                         UtLogger.debug("calibrationModel.statisticsList observer")
                         adapter.clear()
                         if(it!=null) {
                             adapter.addAll(it)
                         }
                     },
-                    model.calibrationModel.startStopCommand.connectAndBind(this, controls.startStopButton) { model.calibrationModel.toggle() },
-                    TextBinding.create(this, controls.startStopButton, model.calibrationModel.observing.map { if(it) resources.getString(R.string.stop) else resources.getString(R.string.start)} ),
-                    VisibilityBinding.create( this, controls.actualCountInput, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(this, controls.actualCountSlider, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(this, controls.resultListView, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(this, controls.registerButton, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(this, controls.errorMessage, model.calibrationModel.hasError, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByGone),
-                    EditNumberBinding.create(this, controls.actualCount, model.calibrationModel.actualCount, BindingMode.TwoWay),
-                    SliderBinding.create(this,controls.actualCountSlider, ConvertLiveData<Int,Float>(model.calibrationModel.actualCount,{it?.toFloat()?:0f}, {it?.toInt()?:0}), BindingMode.TwoWay),
+                    model.calibrationModel.startStopCommand.connectAndBind(viewLifecycleOwner, controls.startStopButton) { model.calibrationModel.toggle() },
+                    TextBinding.create(viewLifecycleOwner, controls.startStopButton, model.calibrationModel.observing.map { if(it) resources.getString(R.string.stop) else resources.getString(R.string.start)} ),
+                    VisibilityBinding.create( viewLifecycleOwner, controls.actualCountInput, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+                    VisibilityBinding.create(viewLifecycleOwner, controls.actualCountSlider, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+                    VisibilityBinding.create(viewLifecycleOwner, controls.resultListView, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+                    VisibilityBinding.create(viewLifecycleOwner, controls.registerButton, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+                    VisibilityBinding.create(viewLifecycleOwner, controls.errorMessage, model.calibrationModel.hasError, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByGone),
+                    EditNumberBinding.create(viewLifecycleOwner, controls.actualCount, model.calibrationModel.actualCount, BindingMode.TwoWay),
+                    SliderBinding.create(viewLifecycleOwner,controls.actualCountSlider, ConvertLiveData<Int,Float>(model.calibrationModel.actualCount,{it?.toFloat()?:0f}, {it?.toInt()?:0}), BindingMode.TwoWay),
                 )
             }
             controls.resultListView.adapter = adapter
@@ -67,7 +67,7 @@ class CalibrationFragment : Fragment() {
     companion object {
     }
 
-    class FieldListAdapter(context: Context, list:List<CalibrationViewModel.Statistics.Field>): ArrayAdapter<CalibrationViewModel.Statistics.Field>(context, 0, list) {
+    class FieldListAdapter(context: Context): ArrayAdapter<CalibrationViewModel.Statistics.Field>(context, 0) {
         override fun isEnabled(index: Int): Boolean {
             return true
         }
