@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_column="3"
+    android:padding="10dp"
+    >
+    <TextView
+        android:id="@+id/field_label"
+        android:layout_column="0"
+        android:layout_gravity="end"
+        android:layout_columnWeight="1"
+        android:textSize="16sp"
+        tools:text="AAAA"
+        />
+    <Space
+        android:layout_width="20dp"/>
+    <TextView
+        android:id="@+id/field_value"
+        android:layout_column="2"
+        android:layout_gravity="start"
+        android:layout_columnWeight="1"
+        android:textSize="16sp"
+        tools:text="BBBB"
+        />
+
+</GridLayout>

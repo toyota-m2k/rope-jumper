@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">RopeJumper</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="analyze">Analyze</string>
+    <string name="actual_count">Actual Count</string>
+    <string name="actual_count_label">Actual Count</string>
+    <string name="actual_count_hint">Actual Count</string>
+    <string name="min_threshold">Min Value</string>
+    <string name="min_threshold_label">Min Value</string>
+    <string name="max_threshold_label">Max Value</string>
+    <string name="threshold_label">Threshold</string>
+    <string name="result_label">RESULT</string>
+    <string name="register">Register</string>
+    <string name="reset">reset</string>
+    <string name="cancel">Cancel</string>
+    <string name="error">Error</string>
+</resources>
