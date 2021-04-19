@@ -39,7 +39,7 @@ class CalibrationViewModel(parentModel:MainViewModel) {
         }
 
         override fun toString(): String {
-            return "${min.toString(4)} - ${max.toString(4)}"
+            return "${min.toString(4)} ... ${max.toString(4)}"
         }
     }
     data class Peek(val value:Float, val step:Int) {
@@ -83,11 +83,15 @@ class CalibrationViewModel(parentModel:MainViewModel) {
             } else {
                 step++
                 val delta = v - prevValue
-                if(delta.absoluteValue>TH_DELTA && prevValue.absoluteValue> TH_VALUE && totalCount>2 && sign(delta)!=sign(prevDelta)) {
+                if(delta.absoluteValue>TH_DELTA && totalCount>2 && sign(delta)!=sign(prevDelta)) {
                     if(sign(prevDelta)>0) {
-                        peekPositive.add(Peek(prevValue, step))
+                        if(prevValue> TH_VALUE) {
+                            peekPositive.add(Peek(prevValue, step))
+                        }
                     } else {
-                        peekNegative.add(Peek(prevValue, step))
+                        if(prevValue< TH_VALUE) {
+                            peekNegative.add(Peek(prevValue, step))
+                        }
                     }
                     step = 0
                 }
@@ -99,7 +103,7 @@ class CalibrationViewModel(parentModel:MainViewModel) {
     }
 
     class Result(analyzer:Analyzer) {
-        val peekNegative:List<Peek> = analyzer.peekNegative.sortedByDescending { it.value }
+        val peekNegative:List<Peek> = analyzer.peekNegative.sortedByDescending { -it.value }
         val peekPositive:List<Peek> = analyzer.peekPositive.sortedByDescending { it.value }
         val totalCount:Int = analyzer.totalCount
         val range:Range = analyzer.range
@@ -111,7 +115,7 @@ class CalibrationViewModel(parentModel:MainViewModel) {
 
         data class Detail(val min:Float, val max:Float, val hit:Float, val range:Range) {
             val median:Float
-                get() = max-min
+                get() = (max+min)/2
         }
 
         fun getDetail(actualCount:Int, positive:Boolean):Detail {
