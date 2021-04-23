@@ -19,4 +19,7 @@
     <string name="reset">reset</string>
     <string name="cancel">Cancel</string>
     <string name="error">Error</string>
+    <string name="trial">Trial</string>
+    <string name="plus_sign">+</string>
+    <string name="minus_sign">-</string>
 </resources>

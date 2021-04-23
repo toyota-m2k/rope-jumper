@@ -17,12 +17,25 @@
         android:orientation="horizontal"
         android:layout_marginBottom="10dp"
         >
-        <Button
-            android:id="@+id/start_stop_button"
-            android:layout_width="100dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/start"
-            />
+            android:orientation="horizontal"
+            >
+            <Button
+                android:id="@+id/start_stop_button"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:text="@string/start"
+                />
+            <Button
+                android:id="@+id/reset_analyzer_button"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:text="@string/reset"
+                />
+
+        </LinearLayout>
         <Button
             android:id="@+id/cancel_button"
             android:layout_width="100dp"
@@ -70,27 +83,109 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/actual_count_slider"
-        app:layout_constraintBottom_toTopOf="@id/register_button"
+        app:layout_constraintBottom_toTopOf="@id/lower_buttons"
+        />
+    <TextView
+        android:id="@+id/error_message"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:text="@string/error"
+        android:gravity="center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/actual_count_slider"
+        app:layout_constraintBottom_toTopOf="@id/lower_buttons"
         />
 
-    <Button
-        android:id="@+id/register_button"
-        android:text="@string/register"
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:id="@+id/lower_buttons"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/trial_result"
+        >
+        <Button
+            android:id="@+id/register_button"
+            android:text="@string/register"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            />
+        <Button
+            android:id="@+id/trial_button"
+            android:text="@string/trial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            />
+        <Button
+            android:id="@+id/reset_trial_button"
+            android:text="@string/reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/trial_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        />
+        >
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/plus_sign"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                />
+            <TextView
+                android:id="@+id/trial_result_pos_hit"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                tools:text="hogehoge"
+                />
+            <TextView
+                android:id="@+id/trial_result_pos_med"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                tools:text="hogehoge"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/minus_sign"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                />
+            <TextView
+                android:id="@+id/trial_result_neg_hit"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                tools:text="hogehoge"
+                />
+            <TextView
+                android:id="@+id/trial_result_neg_med"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                tools:text="hogehoge"
+                />
 
-    <TextView
-        android:id="@+id/error_message"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/error"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        </LinearLayout>
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

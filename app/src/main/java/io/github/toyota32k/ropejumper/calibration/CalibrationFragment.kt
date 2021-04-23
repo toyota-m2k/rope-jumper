@@ -49,19 +49,38 @@ class CalibrationFragment : Fragment() {
                             adapter.addAll(it)
                         }
                     },
-                    model.calibrationModel.startStopCommand.connectAndBind(viewLifecycleOwner, controls.startStopButton) { model.calibrationModel.toggle() },
+                    model.calibrationModel.startStopCommand.connectViewEx(controls.startStopButton),
+                    model.calibrationModel.resetAnalyzerCommand.connectViewEx(controls.resetAnalyzerButton),
+                    model.calibrationModel.resetTrialCommand.connectViewEx(controls.resetTrialButton),
+                    model.calibrationModel.updateTrialCommand.connectViewEx(controls.trialButton),
+                    model.calibrationModel.registerCommand.connectAndBind(this, controls.registerButton, this::register),
+
                     TextBinding.create(viewLifecycleOwner, controls.startStopButton, model.calibrationModel.observing.map { if(it) resources.getString(R.string.stop) else resources.getString(R.string.start)} ),
-                    VisibilityBinding.create( viewLifecycleOwner, controls.actualCountInput, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(viewLifecycleOwner, controls.actualCountSlider, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(viewLifecycleOwner, controls.resultListView, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(viewLifecycleOwner, controls.registerButton, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
-                    VisibilityBinding.create(viewLifecycleOwner, controls.errorMessage, model.calibrationModel.hasError, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByGone),
+//                    VisibilityBinding.create( viewLifecycleOwner, controls.actualCountInput, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+//                    VisibilityBinding.create(viewLifecycleOwner, controls.actualCountSlider, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+                    VisibilityBinding.create(viewLifecycleOwner, controls.resultListView, model.calibrationModel.hasError, BoolConvert.Inverse, VisibilityBinding.HiddenMode.HideByInvisible),
+//                    VisibilityBinding.create(viewLifecycleOwner, controls.registerButton, model.calibrationModel.hasResult, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
+                    VisibilityBinding.create(viewLifecycleOwner, controls.errorMessage, model.calibrationModel.hasError, BoolConvert.Straight, VisibilityBinding.HiddenMode.HideByInvisible),
                     EditNumberBinding.create(viewLifecycleOwner, controls.actualCount, model.calibrationModel.actualCount, BindingMode.TwoWay),
                     SliderBinding.create(viewLifecycleOwner,controls.actualCountSlider, ConvertLiveData<Int,Float>(model.calibrationModel.actualCount,{it?.toFloat()?:0f}, {it?.toInt()?:0}), BindingMode.TwoWay),
+                        TextBinding.create(viewLifecycleOwner, controls.trialResultNegHit, model.calibrationModel.analyzer.trial.countByNegHit.map {"HIT: $it"}),
+                        TextBinding.create(viewLifecycleOwner, controls.trialResultNegMed, model.calibrationModel.analyzer.trial.countByNegMed.map {"MED: $it"}),
+                        TextBinding.create(viewLifecycleOwner, controls.trialResultPosHit, model.calibrationModel.analyzer.trial.countByPosHit.map {"HIT: $it"}),
+                        TextBinding.create(viewLifecycleOwner, controls.trialResultPosMed, model.calibrationModel.analyzer.trial.countByPosMed.map {"MED: $it"}),
                 )
             }
             controls.resultListView.adapter = adapter
         }
+    }
+
+    fun register(view:View?) {
+        val p = if(!viewModel.calibrationModel.analyzer.trial.thresholds.isEmpty) {
+           viewModel.calibrationModel.analyzer.trial.thresholds
+        } else if(!viewModel.calibrationModel.statistics.thresholds.isEmpty) {
+           viewModel.calibrationModel.statistics.thresholds
+        } else null
+        MainViewModel.saveParams(requireContext(), p)
+        viewModel.thresholds = p
     }
 
     companion object {

@@ -1,9 +1,12 @@
 package io.github.toyota32k.ropejumper.calibration
 
+import androidx.preference.PreferenceManager
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import io.github.toyota32k.bindit.Command
 import io.github.toyota32k.ropejumper.app.MainViewModel
+import io.github.toyota32k.ropejumper.app.ThresholdParams
+import io.github.toyota32k.ropejumper.system.DisposablePool
 import io.github.toyota32k.ropejumper.system.KineticSensorFactory
 import io.github.toyota32k.utils.IDisposable
 import io.github.toyota32k.utils.UtLogger
@@ -21,13 +24,16 @@ fun Float.toString(numOfDec: Int): String {
     }
     return String.format(("%.${numOfDec}f").format(this))
 }
-class CalibrationViewModel(parentModel:MainViewModel) {
+class CalibrationViewModel(parentModel:MainViewModel) : IDisposable {
     val rootModelRef = WeakReference<MainViewModel>(parentModel)
     val rootModel:MainViewModel
         get() = rootModelRef.get()!!
+    val disposablePool = DisposablePool()
 
     val startStopCommand = Command()
-    val resetCommand = Command()
+    val resetAnalyzerCommand = Command()
+    val resetTrialCommand = Command()
+    val updateTrialCommand = Command()
     val registerCommand = Command()
 
     val sensor = rootModel.sensorFactory.createLinearAccelerationSensor(KineticSensorFactory.SamplingRate.Fastest.delay)
@@ -47,12 +53,56 @@ class CalibrationViewModel(parentModel:MainViewModel) {
             get() = value/step
     }
 
+    class Trial {
+        val enabled = MutableLiveData(false)
+        val countByNegHit = MutableLiveData(0)
+        val countByNegMed = MutableLiveData(0)
+        val countByPosHit = MutableLiveData(0)
+        val countByPosMed = MutableLiveData(0)
+
+        var thresholds:ThresholdParams = ThresholdParams.empty
+
+        fun reset() {
+            countByNegHit.value = 0
+            countByNegMed.value = 0
+            countByPosHit.value = 0
+            countByPosMed.value = 0
+        }
+
+        fun setThreshold(s:Statistics) {
+            enabled.value = true
+            thresholds = s.thresholds
+        }
+
+        fun updatePositive(v:Float) {
+            if (enabled.value == true) {
+                if (v > thresholds.thPosHit) {
+                    countByPosHit.value = (countByPosHit.value ?: 0) + 1
+                }
+            }
+            if (v > thresholds.thPosMed) {
+                countByPosMed.value = (countByPosMed.value ?: 0) + 1
+            }
+        }
+        fun updateNegative(v:Float) {
+            if (enabled.value == true) {
+                if (v < thresholds.thNegHit) {
+                    countByNegHit.value = (countByNegHit.value ?: 0) + 1
+                }
+                if (v < thresholds.thNegMed) {
+                    countByNegMed.value = (countByNegMed.value ?: 0) + 1
+                }
+            }
+        }
+    }
+
     class Analyzer {
         companion object {
             const val TH_VALUE = 0.5
             const val TH_DELTA = 0.01
         }
 
+        val trial = Trial()
         val range = Range()
         var prevValue:Float = 0f
         var prevDelta:Float = 0f
@@ -86,11 +136,13 @@ class CalibrationViewModel(parentModel:MainViewModel) {
                 if(delta.absoluteValue>TH_DELTA && totalCount>2 && sign(delta)!=sign(prevDelta)) {
                     if(sign(prevDelta)>0) {
                         if(prevValue> TH_VALUE) {
-                            peekPositive.add(Peek(prevValue, step))
+                            peekPositive.add(Peek(v, step))
+                            trial.updatePositive(v)
                         }
                     } else {
                         if(prevValue< TH_VALUE) {
-                            peekNegative.add(Peek(prevValue, step))
+                            peekNegative.add(Peek(v, step))
+                            trial.updateNegative(v)
                         }
                     }
                     step = 0
@@ -125,6 +177,18 @@ class CalibrationViewModel(parentModel:MainViewModel) {
             }
             return Detail(peeks[actualCount-2].value, peeks[actualCount].value, peeks[actualCount-1].value, Range(peeks.last().value, peeks.first().value))
         }
+
+        fun trialCount(threshold:Float, positive:Boolean) : Int {
+            return if(positive) {
+                peekPositive.count {
+                    it.value > threshold
+                }
+            } else {
+                peekNegative.count {
+                    it.value < threshold
+                }
+            }
+        }
     }
 
     class Statistics() {
@@ -144,6 +208,13 @@ class CalibrationViewModel(parentModel:MainViewModel) {
             POS_HIT("+ Hit", 250),
             POS_MEDIAN("+ Median", 260),
         }
+
+        var thresholds:ThresholdParams = ThresholdParams.empty
+//        var thNegHit:Float = 0f
+//        var thNegMed:Float = 0f
+//        var thPosHit:Float = 0f
+//        var thPosMed:Float = 0f
+
         data class Field(val type:FieldType, val value:String, val rawData:Any?=null) {
             val label = type.label
         }
@@ -158,6 +229,7 @@ class CalibrationViewModel(parentModel:MainViewModel) {
         }
         fun clear() {
             fields.clear()
+            thresholds = ThresholdParams.empty
         }
 
 
@@ -167,6 +239,9 @@ class CalibrationViewModel(parentModel:MainViewModel) {
 
             val neg = result.getDetail(actualCount, false)
             val pos = result.getDetail(actualCount, true)
+
+            thresholds = ThresholdParams(neg.hit, neg.median, pos.hit, pos.median)
+
             add(Field(FieldType.TOTAL_COUNT, result.totalCount.toString(4)))
             add(Field(FieldType.RANGE, result.range.toString()))
 
@@ -191,17 +266,10 @@ class CalibrationViewModel(parentModel:MainViewModel) {
     val statistics = Statistics()
     val actualCount = MutableLiveData<Int>(10)
 
-    enum class Status {
-        INIT,
-        OBSERVING,
-        HAS_RESULT,
-        ERROR,
-    }
+    val observing = MutableLiveData(false)
+    val hasResult = MutableLiveData(false)
+    val hasError = MutableLiveData(false)
 
-    val status = MutableLiveData<Status>(Status.INIT)
-    val observing = status.map { it==Status.OBSERVING }
-    val hasResult = status.map { it==Status.HAS_RESULT }
-    val hasError = status.map { it==Status.ERROR }
     val statisticsList = MutableLiveData<List<Statistics.Field>>()
 
     var task : Disposable? = null
@@ -216,13 +284,21 @@ class CalibrationViewModel(parentModel:MainViewModel) {
 //    val readyToRegister = MutableLiveData<Boolean>(false)
 //    val actualCount = MutableLiveData<Int>(10)
 
+    fun resetAnalizer() {
+        if(observing.value!=true) {
+            analyzer.reset()
+            statistics.clear()
+            hasResult.value = false
+            hasError.value = false
+        }
+    }
 
     fun start() {
         UtLogger.debug("start")
         if(task!=null) return
-        status.value = Status.OBSERVING
+        hasError.value = false
+        observing.value = true
         result = null
-        analyzer.reset()
 
         task = sensor.observable.subscribe {
             analyzer.update(it.y)
@@ -235,8 +311,10 @@ class CalibrationViewModel(parentModel:MainViewModel) {
         task?.dispose()
         task = null
         sensor.stop()
+        observing.value = false
         analyze()
     }
+
     fun toggle() {
         UtLogger.debug("toggle")
         if(task!=null) {
@@ -251,15 +329,13 @@ class CalibrationViewModel(parentModel:MainViewModel) {
     fun analyze() {
         UtLogger.debug("analyze")
         val r = Result(analyzer)
-        status.value =
             if(!r.available) {
                 result = null
-                statistics.clear()
-                Status.ERROR
+                hasError.value = true
             } else {
                 result = r
+                hasResult.value = true
                 updateByResult()
-                Status.HAS_RESULT
             }
     }
 
@@ -280,12 +356,31 @@ class CalibrationViewModel(parentModel:MainViewModel) {
         }
     }
 
-    init {
-        actualCount.observeForever(this::observeActualCount)
+    fun updateTrialParameters() {
+        if(hasResult.value==true) {
+            analyzer.trial.setThreshold(statistics)
+        }
     }
 
-    fun dispose() {
-        actualCount.removeObserver(this::observeActualCount)
+    fun resetTrialResult() {
+        analyzer.trial.reset()
+    }
+
+    init {
+        disposablePool
+                .observeForever(actualCount, this::observeActualCount)
+                .bindForever(startStopCommand, this::toggle)
+                .bindForever(resetAnalyzerCommand, this::resetAnalizer)
+                .bindForever(resetTrialCommand, this::resetTrialResult)
+                .bindForever(updateTrialCommand, this::updateTrialParameters)
+    }
+
+    override fun dispose() {
+        disposablePool.dispose()
+    }
+
+    override fun isDisposed(): Boolean {
+        return disposablePool.isDisposed()
     }
 
     companion object {
