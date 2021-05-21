@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun changePanel(panel:MainViewModel.FragmentIndex) {
+    fun changePanel(panel:MainViewModel.FragmentIndex?) {
 
     }
 }
